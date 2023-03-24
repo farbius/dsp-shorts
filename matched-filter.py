@@ -46,14 +46,18 @@ def main():
     # Chirp Pulse
     x       = np.exp(2*1j*np.pi*(f0+Sr*t_ax)*t_ax)*(t_ax<T0)
     n       = np.random.randn(N)+1j*np.random.randn(N)
-    # n      /= np.sqrt(2)
+    n      /= np.sqrt(2)
     # Impulse response
     h       = np.exp(2*1j*np.pi*((dev+f0)-Sr*t_ax)*t_ax)*(t_ax<T0)
 
-    x_pow   = 10*np.log10(np.sum(np.abs(x)**2)/Ns)
+    x_pow   = 10*np.log10(np.sum(np.abs(x)**2))
     print("<< Input signal average power is {:3.2f} dB".format(x_pow))
-    # n_pow   = 10*np.log10(np.sum(np.abs(n)**2)/Ns)
-    # print("<< Input noise average power is {:3.2f} dB".format(n_pow))
+    
+    plt.figure(figsize=(15,10))
+    plt.plot(np.abs(n))
+    plt.grid()
+    n_pow   = 10*np.log10(np.sum(np.abs(n)**2)/N)
+    print("<< Input noise average power is {:3.2f} dB".format(n_pow))
     # print("<< Input SNR is {:4.4f} dB".format(x_pow - n_pow))
     
 
@@ -70,10 +74,10 @@ def main():
     mult_n  = (np.fft.ifft(multF_nh))/N # np.fft.fftshift
     y       = mult_x+mult_n
     
-    x_out_p = 20*np.log10(np.max(np.abs(y)))
+    x_out_p = 10*np.log10(np.max(np.abs(y)**2))
     print("<< Output signal max power is {:3.2f} dB".format(x_out_p))
     
-    n_out_p= 20*np.log10(np.sum(np.abs(mult_n))/N)
+    n_out_p= 10*np.log10(np.sum(np.abs(mult_n)**2)/N)
     print("<< Output noise average power is {:3.2f} dB".format(n_out_p))
     print("<< Output SNR is {:4.4f} dB".format(x_out_p-n_out_p))
 
