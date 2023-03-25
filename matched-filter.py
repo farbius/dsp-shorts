@@ -10,57 +10,30 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-N       = 1024       #      number of points
-Fs      = 100e6     # Hz,  sample rate
-dt      = 1/Fs
+N       = 1024      # number of samples
+fn1     = 0         # start freq bin
+fn2     = 200       # stop  freq bin
+Nb      = fn2 - fn1 # spect width
+Nt      = N/4       # pulse width
+Sn      = Nb/Nt/2*N # chirp rate
 
-dev     = 20e6      # Hz,  chirp frequency deviation
-T0      = N/4*dt    # s,   Pulse length
-Sr      = dev/T0/2  # Hz/s chirp rate
-f0      = 0e6       # Hz,  chirp start frequency
-
-qin_dB  = 0         # dB,  input SNR
-
-kb      = 1.38e-23  # W*s/K Boltzman constant
-Tsh     = 300       # K,    reciever temperatur
-kn      = 4         #       noise factor
-
-# Thermal noise average power (Noise floor)
-Pn_db   = 10*np.log10(kb*Tsh*kn*Fs)
-
-# Signal average power
-Ps_dB   = qin_dB + Pn_db
-
-t_ax    = np.linspace(0,N,N)*dt;# time axis
-f_ax    = np.linspace(0, Fs, N);      # freq axis
-Ns      = np.round(T0/dt)                   # length of chirp pulse in samples
-
-MF_gain = 10*np.log10(Ns)
-print("<< MF gain is {:4.4f} dB".format(MF_gain))
-
-
-# print("<< T0*dev is {:4.4f} dB".format(10*np.log10(T0*dev)))
+tn_ax   = np.linspace(0,1,N); # axis in time domain
 
 
 def main():
-    # Chirp Pulse
-    x       = np.exp(2*1j*np.pi*(f0+Sr*t_ax)*t_ax)*(t_ax<T0)
-    n       = np.random.randn(N)+1j*np.random.randn(N)
-    n      /= np.sqrt(2)
-    # Impulse response
-    h       = np.exp(2*1j*np.pi*((dev+f0)-Sr*t_ax)*t_ax)*(t_ax<T0)
 
-    x_pow   = 10*np.log10(np.sum(np.abs(x)**2))
+    # Chirp Pulse
+    x       =  np.exp(2*1j*np.pi*(fn1+Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
+    n       = (np.random.randn(N)+1j*np.random.randn(N))/np.sqrt(2) 
+    # Impulse response
+    h       =  np.exp(2*1j*np.pi*((Nb-fn1)-Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
+
+    x_pow   = 20*np.log10(np.sum(np.abs(x))/Nt)
     print("<< Input signal average power is {:3.2f} dB".format(x_pow))
     
-    plt.figure(figsize=(15,10))
-    plt.plot(np.abs(n))
-    plt.grid()
-    n_pow   = 10*np.log10(np.sum(np.abs(n)**2)/N)
+    n_pow   = 20*np.log10(np.sum(np.abs(n))/N)
     print("<< Input noise average power is {:3.2f} dB".format(n_pow))
-    # print("<< Input SNR is {:4.4f} dB".format(x_pow - n_pow))
     
-
     # FFT input signal and impulse response
     xF      = np.fft.fft(x)
     nF      = np.fft.fft(n)
@@ -69,60 +42,71 @@ def main():
     # multiplication in frequency domain
     multF_xh= xF*hF
     multF_nh= nF*hF
+    
     # IFFT
-    mult_x  = (np.fft.ifft(multF_xh))/N # np.fft.fftshift
-    mult_n  = (np.fft.ifft(multF_nh))/N # np.fft.fftshift
+    mult_x  = np.fft.ifft(multF_xh)
+    mult_n  = np.fft.ifft(multF_nh)
     y       = mult_x+mult_n
     
-    x_out_p = 10*np.log10(np.max(np.abs(y)**2))
-    print("<< Output signal max power is {:3.2f} dB".format(x_out_p))
+    mf_figure(x, h, xF, hF, multF_xh, mult_x, "signal")
+    mf_figure(n, h, nF, hF, multF_nh, mult_n, "noise")
     
-    n_out_p= 10*np.log10(np.sum(np.abs(mult_n)**2)/N)
-    print("<< Output noise average power is {:3.2f} dB".format(n_out_p))
-    print("<< Output SNR is {:4.4f} dB".format(x_out_p-n_out_p))
-
-    # Plot
+    n_out_p = 20*np.log10(np.sum(np.abs(mult_n))/N/Nt)
+    x_out_p = 20*np.log10(np.max(np.abs(y))/Nt)
+    
     plt.figure(figsize=(15,10))
-    x_ticks = np.arange(min(t_ax/1e-6), max(t_ax/1e-6)+1e-6, 1.0)
-
-    plt.subplot(2, 2, 1)
-    plt.plot(t_ax/1e-6, np.real(n), '.-r', label="$P_{ave}$")# + " noise  is {:3.2f} dB".format(n_pow))
-    plt.plot(t_ax/1e-6, np.real(x), '.-b', label="$P_{ave}$")# + " signal is {:3.2f} dB".format(x_pow))
-    plt.xlabel('t, usec')
-    plt.ylabel('Amplitude, V')
-    plt.title("MF Input: time domain")
+    plt.plot(20*np.log10(np.abs(y)/Nt), '.-r')
+    plt.title("Matched Filter Normalized Output: SNR Gain is {:3.2f} dB".format(x_out_p - n_out_p))
+    plt.xlabel('Time bins')
+    plt.ylabel('Instantaneous Power, dB')
+    plt.axhline(y=n_out_p, color='b', linestyle='--', label="$P_{ave}$ noise " + "{:3.2f} dB".format(n_out_p))
+    plt.axhline(y=x_out_p, color='g', linestyle='--', label="$P_{max}$ signal " + "{:3.2f} dB".format(x_out_p))
     plt.legend(loc='upper right')
-    plt.xticks(x_ticks)
+    plt.grid()   
+    
+    plt.show()
+   
+    
+def mf_figure(xT, hT, xF, hF, xFhF, yT, label="signal"):
+    plt.figure(figsize=(15,10))
+    plt.suptitle("MF input is a " + label, fontsize=16)
+    plt.subplot(2, 2, 1)
+    plt.plot(np.abs(xT), '.-g', label="abs(x_in)")
+    plt.plot(np.real(xT), '.-b', label="x_in")
+    plt.plot(np.real(hT), 'x-r', label="h_mf")
+    plt.xlabel("Time bins")
+    plt.ylabel("real()")
+    plt.legend(loc='upper right')
+    plt.title("Time domain")
     plt.grid()
 
     plt.subplot(2, 2, 2)
-    plt.plot(t_ax/1e-6, np.real(h), '.-b', label='real')
-    plt.xlabel('t, usec')
-    plt.ylabel('Amplitude, V')
-    plt.title("Impulse response: time domain")
+    plt.plot(np.real(xF), '.-b', label="real(FFT(x_in))")
+    plt.plot(np.real(hF), 'x-r', label="real(FFT(h_mf))")
     plt.legend(loc='upper right')
-    plt.xticks(x_ticks)
-    plt.grid()
-
-    plt.subplot(2, 2, 4)
-    plt.plot(f_ax/1e6, np.abs(hF), '.-b', label='modulus')
-    plt.xlabel('f, MHz')
-    plt.ylabel('Modulus')
-    plt.title("Impulse response: frequency domain ")
+    plt.xlabel("Frequency bins")
+    plt.ylabel("real()")
+    plt.title("Frequency domain")
     plt.grid()
 
     plt.subplot(2, 2, 3)
-    plt.plot(t_ax/1e-6, 20*np.log10(np.abs(y)), '.-b')
-    plt.xlabel('t, usec')
-    plt.ylabel('Instantaneous Power, dB')
-    plt.axhline(y=x_out_p, color='m', linestyle='--', label="$P_{max}$ signal " + "{:3.2f} dB".format(x_out_p))
-    plt.axhline(y=n_out_p, color='g', linestyle='--', label="$P_{ave}$ noise " + "{:3.2f} dB".format(n_out_p))
-    plt.title("MF Output: Gain {:3.2f} dB".format(x_out_p-n_out_p))
+    plt.plot(np.real(xFhF), '.-b', label="real(FFT(x_in)*FFT(h_mf))")
     plt.legend(loc='upper right')
-    plt.xticks(x_ticks)
+    plt.xlabel("Frequency bins")
+    plt.ylabel("real()")
+    plt.title("Frequency domain")
     plt.grid()
+
+    plt.subplot(2, 2, 4)
+    plt.plot(np.abs(yT), '.-b', label="abs(IFFT(FFT(x_in)*FFT(h_mf)))")
+    plt.legend(loc='upper right')
+    plt.ylabel("abs()")
+    plt.xlabel("Time bins")
+    plt.title("Time domain")
     plt.tight_layout()
-    plt.show()
+    plt.grid()
+
+   
 
 if __name__ == "__main__":
     main()
