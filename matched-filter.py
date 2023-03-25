@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-The Matched Filter implemenation in frequency domain for Primary Radar Signal processing 
+The Matched Filter implemenation in frequency domain 
 """
 __author__ = "Aleksei Rostov"
 __contact__ = "aleksei.rostov@protonmail.com"
