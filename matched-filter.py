@@ -11,9 +11,9 @@ import matplotlib.pyplot as plt
 
 
 N       = 1024      # number of samples
-fn1     = 0         # start freq bin
-fn2     = 200       # stop  freq bin
-Nb      = fn2 - fn1 # spect width
+nF1     = 0         # start freq bin
+nF2     = 200       # stop  freq bin
+Nb      = nF2 - nF1 # spect width
 Nt      = N/4       # pulse width
 Sn      = Nb/Nt/2*N # chirp rate
 
@@ -23,16 +23,18 @@ tn_ax   = np.linspace(0,1,N); # axis in time domain
 def main():
 
     # Chirp Pulse
-    x       =  np.exp(2*1j*np.pi*(fn1+Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
-    n       = (np.random.randn(N)+1j*np.random.randn(N))/np.sqrt(2) 
+    x       =  np.exp(2*1j*np.pi*(nF1+Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
+    n       = (np.random.normal(0, 1, size=N)+1j*np.random.normal(0, 1, size=N))/np.sqrt(2) 
     # Impulse response
-    h       =  np.exp(2*1j*np.pi*((Nb-fn1)-Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
+    h       =  np.exp(2*1j*np.pi*((Nb-nF1)-Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
 
     x_pow   = 20*np.log10(np.sum(np.abs(x))/Nt)
     print("<< Input signal average power is {:3.2f} dB".format(x_pow))
     
     n_pow   = 20*np.log10(np.sum(np.abs(n))/N)
     print("<< Input noise average power is {:3.2f} dB".format(n_pow))
+    print("<< Input noise average power is {:3.2f} dB".format(np.abs(np.mean(n))))
+    
     
     # FFT input signal and impulse response
     xF      = np.fft.fft(x)
