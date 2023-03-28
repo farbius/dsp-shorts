@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 N       = 1024      # number of samples
-nF1     = 0         # start freq bin
+nF1     = 10        # start freq bin
 nF2     = 200       # stop  freq bin
 Nb      = nF2 - nF1 # spect width
 Nt      = N/4       # pulse width
@@ -27,13 +27,17 @@ def main():
     # Complex noise with unity power
     n       = (np.random.randn(N) + 1j*np.random.randn(N))/np.sqrt(2)
     # Impulse response
-    h       =  np.exp(2*1j*np.pi*((Nb+nF1)-Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
+    h       =  np.exp(2*1j*np.pi*(nF2-Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
 
     x_pow   = 20*np.log10(np.sum(np.abs(x))/Nt)
     print("<< Input signal average power is {:3.2f} dB".format(x_pow))
     # noise variance or power
     n_pow   = 10*np.log10(np.var(n))
     print("<< Input noise average power is {:3.2f} dB".format(n_pow))
+    
+    
+    yn = np.sum(n*np.conjugate(x))
+    print("<< abs(sum(n[k]*conj(x[k]))) = {:3.4f}".format(np.abs(yn)) )
     
     
     # FFT input signal and impulse response
@@ -53,14 +57,14 @@ def main():
     mf_figure(x, h, xF, hF, multF_xh, mult_x, "signal")
     mf_figure(n, h, nF, hF, multF_nh, mult_n, "noise")
     
-    x_out_p = 20*np.log10(np.max(np.abs(y)))
+    x_out_p = 20*np.log10(np.max(np.abs(mult_x/Nt)))
     print("<< Output signal average max is {:3.2f} dB".format(x_out_p))
-    n_out_p = 10*np.log10(np.var(mult_n))
+    n_out_p = 10*np.log10(np.var(mult_n/Nt))
     print("<< Output noise average power is {:3.2f} dB".format(n_out_p))
     
     plt.figure(figsize=(15,10))
-    plt.plot(20*np.log10(np.abs(y)), '.-')
-    plt.title("Matched Filter Output: SNR Gain is {:3.2f} dB".format(x_out_p - n_out_p))
+    plt.plot(20*np.log10(np.abs(y)/Nt), '.-')
+    plt.title("Matched Filter Normalized Output: SNR Gain is {:3.2f} dB".format(x_out_p - n_out_p))
     plt.xlabel('Time bins')
     plt.ylabel('Instantaneous Power, dB')
     plt.axhline(y=x_out_p, color='g', linestyle='--', label="$P_{max}$ signal " + "{:3.2f} dB".format(x_out_p))
@@ -94,7 +98,7 @@ def mf_figure(xT, hT, xF, hF, xFhF, yT, label="signal"):
     plt.grid()
 
     plt.subplot(2, 2, 3)
-    plt.plot(np.real(xFhF), '.-b', label="real(FFT(x_in)*FFT(h_mf))")
+    plt.plot(np.abs(xFhF), '.-b', label="real(FFT(x_in)*FFT(h_mf))")
     plt.legend(loc='upper right')
     plt.xlabel("Frequency bins")
     plt.ylabel("real()")
