@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 
 
 N       = 1024      # number of samples
-nF1     = 10        # start freq bin
-nF2     = 200       # stop  freq bin
+nF1     = 0        # start freq bin
+nF2     = 128       # stop  freq bin
 Nb      = nF2 - nF1 # spect width
-Nt      = N/4       # pulse width
+Nt      = 300       # pulse width
 Sn      = Nb/Nt/2*N # chirp rate
 
 tn_ax   = np.linspace(0,1,N); # axis in time domain
@@ -23,22 +23,17 @@ tn_ax   = np.linspace(0,1,N); # axis in time domain
 def main():
 
     # Input signal pulse
-    x       =  np.exp(2*1j*np.pi*(nF1+Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
+    x       =  np.exp(2*1j*np.pi*(nF1+Sn*tn_ax)*tn_ax)*(np.linspace(0,N-1,N)< Nt)
     # Complex noise with unity power
     n       = (np.random.randn(N) + 1j*np.random.randn(N))/np.sqrt(2)
     # Impulse response
-    h       =  np.exp(2*1j*np.pi*(nF2-Sn*tn_ax)*tn_ax)*(tn_ax<Nt/N)
-
+    h       =  np.exp(2*1j*np.pi*(nF2-Sn*tn_ax)*tn_ax)*(np.linspace(0,N-1,N)< Nt)
+    
     x_pow   = 20*np.log10(np.sum(np.abs(x))/Nt)
     print("<< Input signal average power is {:3.2f} dB".format(x_pow))
     # noise variance or power
     n_pow   = 10*np.log10(np.var(n))
     print("<< Input noise average power is {:3.2f} dB".format(n_pow))
-    
-    
-    yn = np.sum(n*np.conjugate(x))
-    print("<< abs(sum(n[k]*conj(x[k]))) = {:3.4f}".format(np.abs(yn)) )
-    
     
     # FFT input signal and impulse response
     xF      = np.fft.fft(x)
@@ -57,19 +52,11 @@ def main():
     mf_figure(x, h, xF, hF, multF_xh, mult_x, "signal")
     mf_figure(n, h, nF, hF, multF_nh, mult_n, "noise")
     
-    x_out_p = 20*np.log10(np.max(np.abs(mult_x/Nt)))
-    print("<< Output signal average max is {:3.2f} dB".format(x_out_p))
-    n_out_p = 10*np.log10(np.var(mult_n/Nt))
-    print("<< Output noise average power is {:3.2f} dB".format(n_out_p))
-    
     plt.figure(figsize=(15,10))
-    plt.plot(20*np.log10(np.abs(y)/Nt), '.-')
-    plt.title("Matched Filter Normalized Output: SNR Gain is {:3.2f} dB".format(x_out_p - n_out_p))
+    plt.plot((np.abs(y)), '.-')
+    plt.title("Matched Filter Output")
     plt.xlabel('Time bins')
-    plt.ylabel('Instantaneous Power, dB')
-    plt.axhline(y=x_out_p, color='g', linestyle='--', label="$P_{max}$ signal " + "{:3.2f} dB".format(x_out_p))
-    plt.axhline(y=n_out_p, color='b', linestyle='--', label="$P_{ave}$ noise " + "{:3.2f} dB".format(n_out_p))
-    plt.legend(loc='upper right')
+    plt.ylabel('Modulus')
     plt.grid()   
     
     plt.show()
@@ -77,32 +64,32 @@ def main():
     
 def mf_figure(xT, hT, xF, hF, xFhF, yT, label="signal"):
     plt.figure(figsize=(15,10))
-    plt.suptitle("MF input is a " + label, fontsize=16)
+    plt.suptitle("Input is a " + label, fontsize=16)
     plt.subplot(2, 2, 1)
     plt.plot(np.abs(xT), '.-g', label="abs(x_in)")
-    plt.plot(np.real(xT), '.-b', label="x_in")
-    plt.plot(np.real(hT), 'x-r', label="h_mf")
+    plt.plot(np.real(xT), '.-b', label="real(x_in)")
+    plt.plot(np.real(hT), 'x-r', label="real(h_mf)")
     plt.xlabel("Time bins")
     plt.ylabel("real()")
     plt.legend(loc='upper right')
-    plt.title("Time domain")
+    plt.title("MF input")
     plt.grid()
 
     plt.subplot(2, 2, 2)
-    plt.plot(np.real(xF), '.-b', label="real(FFT(x_in))")
-    plt.plot(np.real(hF), 'x-r', label="real(FFT(h_mf))")
+    plt.plot(np.abs(xF), '.-b', label="abs(FFT(x_in))")
+    plt.plot(np.abs(hF), 'x-r', label="abs(FFT(h_mf))")
     plt.legend(loc='upper right')
     plt.xlabel("Frequency bins")
-    plt.ylabel("real()")
-    plt.title("Frequency domain")
+    plt.ylabel("Modulus")
+    plt.title("Signal's spectrum")
     plt.grid()
 
     plt.subplot(2, 2, 3)
-    plt.plot(np.abs(xFhF), '.-b', label="real(FFT(x_in)*FFT(h_mf))")
+    plt.plot(np.real(xFhF), '.-b', label="real(FFT(x_in)*FFT(h_mf))")
     plt.legend(loc='upper right')
     plt.xlabel("Frequency bins")
     plt.ylabel("real()")
-    plt.title("Frequency domain")
+    plt.title("Product of the spectrums")
     plt.grid()
 
     plt.subplot(2, 2, 4)
@@ -110,7 +97,7 @@ def mf_figure(xT, hT, xF, hF, xFhF, yT, label="signal"):
     plt.legend(loc='upper right')
     plt.ylabel("abs()")
     plt.xlabel("Time bins")
-    plt.title("Time domain")
+    plt.title("MF output")
     plt.tight_layout()
     plt.grid()
 
