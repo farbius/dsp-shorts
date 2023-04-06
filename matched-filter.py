@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 
 
 N       = 1024      # number of samples
-nF1     = 0        # start freq bin
-nF2     = 128       # stop  freq bin
+nF1     = 0       # start freq bin
+nF2     = 200       # stop  freq bin
 Nb      = nF2 - nF1 # spect width
-Nt      = 300       # pulse width
+Nt      = 200       # pulse width
 Sn      = Nb/Nt/2*N # chirp rate
 
 tn_ax   = np.linspace(0,1,N); # axis in time domain
@@ -27,8 +27,8 @@ def main():
     # Complex noise with unity power
     n       = (np.random.randn(N) + 1j*np.random.randn(N))/np.sqrt(2)
     # Impulse response
-    h       =  np.exp(2*1j*np.pi*(nF2-Sn*tn_ax)*tn_ax)*(np.linspace(0,N-1,N)< Nt)
-    
+    h       =  np.conjugate(x)
+    h       =  np.roll(h[::-1], Nt)
     x_pow   = 20*np.log10(np.sum(np.abs(x))/Nt)
     print("<< Input signal average power is {:3.2f} dB".format(x_pow))
     # noise variance or power
@@ -67,8 +67,8 @@ def mf_figure(xT, hT, xF, hF, xFhF, yT, label="signal"):
     plt.suptitle("Input is a " + label, fontsize=16)
     plt.subplot(2, 2, 1)
     plt.plot(np.abs(xT), '.-g', label="abs(x_in)")
-    plt.plot(np.real(xT), '.-b', label="real(x_in)")
-    plt.plot(np.real(hT), 'x-r', label="real(h_mf)")
+    plt.plot(np.imag(xT), '.-b', label="imag(x_in)")
+    plt.plot(np.imag(hT), 'x-r', label="imag(h_mf)")
     plt.xlabel("Time bins")
     plt.ylabel("real()")
     plt.legend(loc='upper right')
