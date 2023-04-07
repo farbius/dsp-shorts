@@ -10,8 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-N       = 1024      # number of samples
-nF1     = 0       # start freq bin
+N       = 2048      # number of samples
+nF1     = 200       # start freq bin
 nF2     = 200       # stop  freq bin
 Nb      = nF2 - nF1 # spect width
 Nt      = 200       # pulse width
@@ -45,12 +45,12 @@ def main():
     multF_nh= nF*hF
     
     # IFFT
-    mult_x  = np.fft.ifft(multF_xh)
-    mult_n  = np.fft.ifft(multF_nh)
-    y       = mult_x+mult_n
+    y_x     = np.fft.ifft(multF_xh)
+    y_n     = np.fft.ifft(multF_nh)
+    y       = y_x+y_n
     
-    mf_figure(x, h, xF, hF, multF_xh, mult_x, "signal")
-    mf_figure(n, h, nF, hF, multF_nh, mult_n, "noise")
+    mf_figure(x, h, xF, hF, multF_xh, y_x, "desirable signal")
+    mf_figure(n, h, nF, hF, multF_nh, y_n, "white noise")
     
     plt.figure(figsize=(15,10))
     plt.plot((np.abs(y)), '.-')
@@ -64,7 +64,7 @@ def main():
     
 def mf_figure(xT, hT, xF, hF, xFhF, yT, label="signal"):
     plt.figure(figsize=(15,10))
-    plt.suptitle("Input is a " + label, fontsize=16)
+    plt.suptitle("Input is " + label, fontsize=16)
     plt.subplot(2, 2, 1)
     plt.plot(np.abs(xT), '.-g', label="abs(x_in)")
     plt.plot(np.imag(xT), '.-b', label="imag(x_in)")
