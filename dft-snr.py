@@ -4,14 +4,14 @@ DFT Signal to Noise Ratio
 """
 __author__ = "Aleksei Rostov"
 __contact__ = "aleksei.rostov@protonmail.com"
-__date__ = "2023/03/25"
+__date__ = "2023/04/08"
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 N       = 512      # number of samples
-nF0     = 16        # start freq bin
+nF0     = 16       # start freq bin
 
 nt_ax   = np.linspace(0,1,N); # axis in time domain
 
@@ -23,7 +23,7 @@ def main():
     # Reference for nF0 bin DFT
     h       =  np.exp(-2*1j*np.pi*nF0*nt_ax)
     # Noise
-    n       = (np.random.normal(0, 1, size=N)+1j*np.random.normal(0, 1, size=N))
+    n       = (np.random.randn(N) + 1j*np.random.randn(N))/np.sqrt(2)
     
     xF_nF0  = np.sum(x*h)
     print("<< Signal Modulus on nF0 bin is {:4.1f}".format(np.abs(xF_nF0)))

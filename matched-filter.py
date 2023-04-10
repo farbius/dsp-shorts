@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 N       = 2048      # number of samples
-nF1     = 200       # start freq bin
+nF1     = 200         # start freq bin
 nF2     = 200       # stop  freq bin
 Nb      = nF2 - nF1 # spect width
 Nt      = 200       # pulse width
